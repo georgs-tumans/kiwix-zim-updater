@@ -6,6 +6,24 @@ Just pass this script your ZIM directory and away it goes. *(see Usage below)*
 
 Tested on Debian 13, and should work out of the box on most debian systems, but I have not tested that.
 
+## About This Fork
+
+Fork of [jojo2357/kiwix-zim-updater](https://github.com/jojo2357/kiwix-zim-updater) with these changes:
+
+- **Works with Wget2** (the default `wget` on Fedora 40+). Wget2 treated the `.meta4` URLs as metalinks and tried to download the ZIM itself, so the script hung. `--no-metalink` is now added when Wget2 is detected.
+- **Old ZIMs are only purged after a complete download.** The wget exit status is checked, and the new ZIM's size is always compared with the size published by Kiwix (with `-c` the sha256 is checked as well). Before, a dropped connection left a truncated new ZIM and the old one was deleted anyway.
+- **One failed download no longer breaks the rest of the run.** Before, after one checksum failure every later download in the same run was thrown away during cleanup.
+- **ZIMs are skipped when their size/checksum info cannot be fetched**, instead of being downloaded unverified.
+- **Ask mode (`-a`)**: lists the available updates with their sizes and the total, then asks `[y/N]` before downloading or deleting anything, all in one run.
+- The update report shows the download size of every update and a total.
+
+Recommended use:
+
+```shell
+./kiwix-zim-updater.sh -a -c /path/to/zims/      # list updates, ask, download, verify sha256, purge old
+./kiwix-zim-updater.sh -a -c -p /path/to/zims/   # same, but keep the old versions
+```
+
 ## What It Does
 
 I wanted an easy way to ensure my ZIM library was kept updated without actually needing to check every ZIM individually. I looked for a tool to do this, but didn't find anything... so I put on my amateur BASH hat and made one.
@@ -71,7 +89,7 @@ Not checked or installed via script:
 This script is self-updating. The self-update routine uses git commands to make the update so this script should be "installed" with the below command.
 
 ```shell
-git clone https://github.com/jojo2357/kiwix-zim-updater.git
+git clone https://github.com/georgs-tumans/kiwix-zim-updater.git
 ```
 
 UPDATE: If you decide not to install via a git clone, you can still use this script, however, it will just skip the update check and continue on.
@@ -86,6 +104,8 @@ NOTE: if you are not tracking the `main` branch, the update check will be skippe
   
   Universal Options:
       -h, --help                 Show this usage and exit.
+      -a, --ask                  List the available updates, then ask before downloading/purging (single run).
+                                 Answers are read from stdin; no answer (e.g. cron) means no.
       -d, --disable-dry-run      Dry-Run Override.
                                  *** Caution ***   
       -u, --skip-update          Skips checking for script updates (very useful for development).
